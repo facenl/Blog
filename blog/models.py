@@ -4,6 +4,8 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.urls import reverse
 from django.utils.html import strip_tags
+
+
 # Create your models here.
 
 class Category(models.Model):
@@ -37,6 +39,7 @@ class Post(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     tag = models.ManyToManyField(Tag, blank=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE)
+    views = models.PositiveIntegerField(default=0, editable=False)  # editable 指不允许后台修改
 
     class Meta:
         verbose_name = '文章'
@@ -46,15 +49,18 @@ class Post(models.Model):
     def __str__(self):
         return self.title
 
+    def increase_views(self):
+        self.views += 1
+        self.save(update_fields=['views'])
+
     def save(self, *args, **kwargs):
         self.modified_time = timezone.now()
         md = markdown.Markdown(extensions=[
-             'markdown.extensions.extra',
+            'markdown.extensions.extra',
             'markdown.extensions.codehilite',
         ])
         self.excerpt = strip_tags(md.convert(self.body))[:54]
         super().save(*args, **kwargs)
 
-
     def get_absolute_url(self):
-        return reverse('blog:detail', kwargs={'pk':self.pk})
+        return reverse('blog:detail', kwargs={'pk': self.pk})
